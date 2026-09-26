@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmailJobStatus {
+  scheduled
+  processing
+  sent
+  failed
+  archived
+}
+
+model User {
+  id               String            @id @default(uuid())
+  googleId         String?           @unique
+  name             String?
+  email            String            @unique
+  avatarUrl        String?
+  createdAt        DateTime          @default(now())
+  senders          Sender[]
+  emailJobs        EmailJob[]
+  slackIntegration SlackIntegration?
+
+  @@map("users")
+}
+
+model Sender {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email            String
+  smtpConfigJson   Json
+  createdAt        DateTime          @default(now())
+  emailJobs        EmailJob[]
+  rateLimitConfigs RateLimitConfig[]
+
+  @@index([userId])
+  @@map("senders")
+}
+
+model EmailJob {
+  id             String         @id @default(uuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         Sender         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  recipientEmail String
+  subject        String
+  body           String         @db.Text
+  status         EmailJobStatus @default(scheduled)
+  scheduledAt    DateTime
+  sentAt         DateTime?
+  bullJobId      String?        @unique
+  batchId        String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([userId, status])
+  @@index([scheduledAt, status])
+  @@index([batchId])
+  @@map("email_jobs")
+}
+
+model SlackIntegration {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId      String?
+  accessToken String?
+  webhookUrl  String
+  channel     String?
+  connectedAt DateTime @default(now())
+
+  @@map("slack_integrations")
+}
+
+model RateLimitConfig {
+  id                String   @id @default(uuid())
+  senderId          String?  @unique
+  sender            Sender?  @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  maxEmailsPerHour  Int      @default(100)
+  minDelaySeconds   Int      @default(5)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("rate_limit_configs")
+}
