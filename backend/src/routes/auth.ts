@@ -9,11 +9,11 @@ const router = Router();
 router.get('/dev-login', async (req: Request, res: Response) => {
   try {
     // Upsert demo user
-    let user = await prisma.user.findUnique({ where: { email: 'demo@reachinbox.ai' } });
+    let user = await prisma.user.findUnique({ where: { email: 'trisadas18@gmail.com' } });
     if (!user) {
       user = await prisma.user.create({
         data: {
-          email: 'demo@reachinbox.ai',
+          email: 'trisadas18@gmail.com',
           name: 'ReachInbox Demo',
           googleId: 'dev-google-id',
         },
@@ -38,7 +38,7 @@ router.get('/dev-login', async (req: Request, res: Response) => {
       }
     }
 
-    const demoSenderEmail = 'demo@reachinbox.ai';
+    const demoSenderEmail = 'trisadas18@gmail.com';
     const existingSender = await prisma.sender.findFirst({ where: { userId: user.id, email: demoSenderEmail } });
 
     if (existingSender) {
