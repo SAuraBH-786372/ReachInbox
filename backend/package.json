@@ -42,7 +42,6 @@
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
     "prisma": "^5.14.0",
-    "redis-memory-server": "^0.17.1",
     "tsx": "^4.10.5",
     "typescript": "^5.4.5"
   }
