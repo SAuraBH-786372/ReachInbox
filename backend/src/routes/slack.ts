@@ -29,7 +29,7 @@ router.get('/oauth/start', requireAuth, (req: Request, res: Response) => {
   const redirectUri = process.env.SLACK_REDIRECT_URI || '';
   
   const slackUrl = `https://slack.com/oauth/v2/authorize?client_id=${slackClientId}&scope=incoming-webhook&redirect_uri=${redirectUri}&state=${state}`;
-  res.redirect(slackUrl);
+  res.json({ url: slackUrl });
 });
 
 router.get('/oauth/callback', async (req: Request, res: Response) => {

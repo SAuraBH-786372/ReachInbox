@@ -48,8 +48,18 @@ export default function SettingsPage() {
     }
   }
 
-  function handleConnect() {
-    window.location.href = `${apiUrl}/api/slack/oauth/start`;
+  async function handleConnect() {
+    try {
+      const res = await fetchApi('/api/slack/oauth/start');
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.url;
+      } else {
+        toast.error('Could not initiate Slack connection');
+      }
+    } catch (e) {
+      toast.error('Could not reach backend');
+    }
   }
 
   return (
