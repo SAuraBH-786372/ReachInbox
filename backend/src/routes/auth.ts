@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import passport from 'passport';
+import nodemailer from 'nodemailer';
 import { config } from '../config';
 import { prisma } from '../services/prisma';
 
@@ -20,18 +21,51 @@ router.get('/dev-login', async (req: Request, res: Response) => {
     }
 
     // Upsert a demo sender with working Ethereal SMTP so all features work out of the box
-    const existingSender = await prisma.sender.findFirst({ where: { userId: user.id } });
-    if (!existingSender) {
-      await prisma.sender.create({
+    // Dynamically generate real Ethereal credentials so SMTP auth doesn't fail
+    let etherealUser = config.ethereal.user;
+    let etherealPass = config.ethereal.pass;
+    
+    if (!etherealUser || !etherealPass) {
+      try {
+        const testAccount = await nodemailer.createTestAccount();
+        etherealUser = testAccount.user;
+        etherealPass = testAccount.pass;
+      } catch (err) {
+        console.error('[Auth] Failed to generate Ethereal test account:', err);
+        // Fallback placeholders (these will fail to send, but prevent crash)
+        etherealUser = 'demo@ethereal.email';
+        etherealPass = 'demopass';
+      }
+    }
+
+    const demoSenderEmail = 'demo@reachinbox.ai';
+    const existingSender = await prisma.sender.findFirst({ where: { userId: user.id, email: demoSenderEmail } });
+
+    if (existingSender) {
+      await prisma.sender.update({
+        where: { id: existingSender.id },
         data: {
-          userId: user.id,
-          email: 'demo@reachinbox.ai',
           smtpConfigJson: {
             host: 'smtp.ethereal.email',
             port: 587,
             secure: false,
-            user: config.ethereal.user || 'demo@ethereal.email',
-            pass: config.ethereal.pass || 'demopass',
+            user: etherealUser,
+            pass: etherealPass,
+            fromName: 'ReachInbox Demo',
+          },
+        }
+      });
+    } else {
+      await prisma.sender.create({
+        data: {
+          userId: user.id,
+          email: demoSenderEmail,
+          smtpConfigJson: {
+            host: 'smtp.ethereal.email',
+            port: 587,
+            secure: false,
+            user: etherealUser,
+            pass: etherealPass,
             fromName: 'ReachInbox Demo',
           },
         },
