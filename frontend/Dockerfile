@@ -12,8 +12,9 @@ COPY packages/ ./packages/
 # Copy frontend source
 COPY frontend/package.json ./frontend/
 
-# Install dependencies
-RUN npm ci --workspace=packages/types --workspace=frontend
+# Install dependencies — omit optional to skip platform-specific binaries
+# (e.g. @next/swc-win32-x64-msvc would fail on Linux)
+RUN npm ci --workspace=packages/types --workspace=frontend --omit=optional
 
 # Copy all source files
 COPY frontend/ ./frontend/
@@ -22,6 +23,7 @@ COPY frontend/ ./frontend/
 # NEXT_PUBLIC_API_URL must be set at build time
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build --workspace=frontend
 
@@ -32,10 +34,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy only what Next.js needs to run in standalone mode
 COPY --from=builder /app/frontend/.next/standalone ./
 COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
+
+# Copy public assets if they exist
 COPY --from=builder /app/frontend/public ./frontend/public
 
 EXPOSE 3000
