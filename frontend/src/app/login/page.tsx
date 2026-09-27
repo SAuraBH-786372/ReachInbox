@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
@@ -28,12 +27,34 @@ export default function LoginPage() {
     addToast('Email login coming soon', 'info');
   };
 
+  const handleDemoLogin = () => {
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/dev-login`;
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col items-center pt-24 px-4">
       <div className="w-full max-w-sm border border-gray-100 rounded-xl p-8 shadow-sm">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Login</h1>
 
+        {/* Demo Login — instant access, no Google account required */}
         <button
+          id="demo-login-btn"
+          onClick={handleDemoLogin}
+          className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 rounded-lg mb-3 text-sm transition-colors flex items-center justify-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Demo Login (No Google Account Needed)
+        </button>
+
+        <div className="text-center text-gray-400 text-xs my-3 relative">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
+          <span className="relative bg-white px-2">or continue with</span>
+        </div>
+
+        <button
+          id="google-login-btn"
           onClick={handleGoogleLogin}
           className="w-full border border-gray-300 rounded-lg py-2.5 px-4 flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors"
         >
@@ -47,8 +68,8 @@ export default function LoginPage() {
         </button>
 
         <div className="text-center text-gray-400 text-sm my-4 relative">
-           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-           <span className="relative bg-white px-2">or sign up through email</span>
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
+          <span className="relative bg-white px-2">or sign up through email</span>
         </div>
 
         <div className="space-y-4">
@@ -59,7 +80,6 @@ export default function LoginPage() {
             onClick={handleEmailClick}
             readOnly
           />
-          
           <input
             type="password"
             placeholder="Password"
@@ -67,7 +87,6 @@ export default function LoginPage() {
             onClick={handleEmailClick}
             readOnly
           />
-
           <button
             onClick={handleEmailClick}
             className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 rounded-lg mt-2 text-sm transition-colors"
