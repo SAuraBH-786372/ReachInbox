@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
 import nodemailer from 'nodemailer';
 import { EMAIL_QUEUE_NAME, EmailJobData } from '../queues/emailQueue';
-import { redisOptions } from '../services/redis';
+import { createRedisConnection } from '../services/redis';
 import { prisma } from '../services/prisma';
 import { checkAndIncrementRateLimit, decrementRateLimit } from '../services/rateLimiter';
 import { notifyRateLimitHit } from '../services/slack';
@@ -166,7 +166,7 @@ export function createEmailWorker(): Worker<EmailJobData> {
       }
     },
     {
-      connection: redisOptions,
+      connection: createRedisConnection(),
       concurrency: config.workerConcurrency,
       limiter: {
         max: 1,
