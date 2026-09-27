@@ -90,7 +90,8 @@ export function createEmailWorker(): Worker<EmailJobData> {
       const smtpConfig = sender.smtpConfigJson as any;
 
       try {
-        let info;
+        let info: any;
+        let isMocked = false;
         // On Render free tier, standard SMTP ports (25, 465, 587) are blocked.
         // If the user is using the demo Ethereal account, we must mock the SMTP connection 
         // to prevent a 2-minute ETIMEDOUT hang, while still proving the BullMQ pipeline works.
@@ -98,6 +99,7 @@ export function createEmailWorker(): Worker<EmailJobData> {
            // Simulate network delay
            await new Promise(r => setTimeout(r, 1000));
            info = { messageId: `<mock-${Date.now()}@ethereal.email>` };
+           isMocked = true;
            console.log(`[EmailWorker] (Mocked for Render) Email sent to ${recipientEmail}`);
         } else {
           const transporter = nodemailer.createTransport({
@@ -130,9 +132,11 @@ export function createEmailWorker(): Worker<EmailJobData> {
         });
 
         console.log(`[EmailWorker] Email sent successfully to ${recipientEmail}. MessageId: ${info.messageId}`);
-        const previewUrl = nodemailer.getTestMessageUrl(info);
-        if (previewUrl) {
-          console.log(`[EmailWorker] Ethereal Preview URL: ${previewUrl}`);
+        if (!isMocked) {
+          const previewUrl = nodemailer.getTestMessageUrl(info);
+          if (previewUrl) {
+            console.log(`[EmailWorker] Ethereal Preview URL: ${previewUrl}`);
+          }
         }
 
         // ── Step 4: Index in Elasticsearch ───────────────────────────────
