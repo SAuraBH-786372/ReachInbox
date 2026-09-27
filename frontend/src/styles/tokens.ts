@@ -16,7 +16,7 @@ export const tokens = {
   statusColors: {
     scheduled: { bg: '#FEF3C7', text: '#D97706' }, // amber
     processing: { bg: '#DBEAFE', text: '#2563EB' }, // blue
-    sent: { bg: '#F3F4F6', text: '#6B7280' }, // gray
+    sent: { bg: '#DCFCE7', text: '#16A34A' }, // green
     failed: { bg: '#FEE2E2', text: '#DC2626' }, // red
     archived: { bg: '#F3F4F6', text: '#4B5563' }, // slate/gray
   }
