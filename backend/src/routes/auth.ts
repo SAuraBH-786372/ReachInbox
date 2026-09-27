@@ -7,7 +7,8 @@ const router = Router();
 
 router.get('/dev-login', async (req: Request, res: Response) => {
   try {
-    let user = await prisma.user.findFirst();
+    // Upsert demo user
+    let user = await prisma.user.findUnique({ where: { email: 'demo@reachinbox.ai' } });
     if (!user) {
       user = await prisma.user.create({
         data: {
@@ -17,6 +18,26 @@ router.get('/dev-login', async (req: Request, res: Response) => {
         },
       });
     }
+
+    // Upsert a demo sender with working Ethereal SMTP so all features work out of the box
+    const existingSender = await prisma.sender.findFirst({ where: { userId: user.id } });
+    if (!existingSender) {
+      await prisma.sender.create({
+        data: {
+          userId: user.id,
+          email: 'demo@reachinbox.ai',
+          smtpConfigJson: {
+            host: 'smtp.ethereal.email',
+            port: 587,
+            secure: false,
+            user: config.ethereal.user || 'demo@ethereal.email',
+            pass: config.ethereal.pass || 'demopass',
+            fromName: 'ReachInbox Demo',
+          },
+        },
+      });
+    }
+
     req.login(user, (err) => {
       if (err) return res.status(500).json({ error: err.message });
       req.session.save(() => {
