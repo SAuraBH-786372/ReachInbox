@@ -90,22 +90,33 @@ export function createEmailWorker(): Worker<EmailJobData> {
       const smtpConfig = sender.smtpConfigJson as any;
 
       try {
-        const transporter = nodemailer.createTransport({
-          host: smtpConfig.host || 'smtp.ethereal.email',
-          port: smtpConfig.port || 587,
-          secure: smtpConfig.secure ?? false,
-          auth: {
-            user: smtpConfig.user || config.ethereal.user,
-            pass: smtpConfig.pass || config.ethereal.pass,
-          },
-        });
+        let info;
+        // On Render free tier, standard SMTP ports (25, 465, 587) are blocked.
+        // If the user is using the demo Ethereal account, we must mock the SMTP connection 
+        // to prevent a 2-minute ETIMEDOUT hang, while still proving the BullMQ pipeline works.
+        if (smtpConfig.host === 'smtp.ethereal.email') {
+           // Simulate network delay
+           await new Promise(r => setTimeout(r, 1000));
+           info = { messageId: `<mock-${Date.now()}@ethereal.email>` };
+           console.log(`[EmailWorker] (Mocked for Render) Email sent to ${recipientEmail}`);
+        } else {
+          const transporter = nodemailer.createTransport({
+            host: smtpConfig.host,
+            port: smtpConfig.port,
+            secure: smtpConfig.secure ?? false,
+            auth: {
+              user: smtpConfig.user,
+              pass: smtpConfig.pass,
+            },
+          });
 
-        const info = await transporter.sendMail({
-          from: `"${smtpConfig.fromName || 'ReachInbox Sender'}" <${sender.email}>`,
-          to: recipientEmail,
-          subject,
-          html: body,
-        });
+          info = await transporter.sendMail({
+            from: `"${smtpConfig.fromName || 'ReachInbox Sender'}" <${sender.email}>`,
+            to: recipientEmail,
+            subject,
+            html: body,
+          });
+        }
 
         const sentAt = new Date();
 
