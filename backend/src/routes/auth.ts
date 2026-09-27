@@ -8,17 +8,16 @@ const router = Router();
 
 router.get('/dev-login', async (req: Request, res: Response) => {
   try {
-    // Upsert demo user
-    let user = await prisma.user.findUnique({ where: { email: 'trisadas18@gmail.com' } });
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: 'trisadas18@gmail.com',
-          name: 'ReachInbox Demo',
-          googleId: 'dev-google-id',
-        },
-      });
-    }
+    // Upsert demo user by googleId to prevent unique constraint errors if email changes
+    let user = await prisma.user.upsert({
+      where: { googleId: 'dev-google-id' },
+      update: { email: 'trisadas18@gmail.com' },
+      create: {
+        email: 'trisadas18@gmail.com',
+        name: 'ReachInbox Demo',
+        googleId: 'dev-google-id',
+      },
+    });
 
     // Upsert a demo sender with working Ethereal SMTP so all features work out of the box
     // Dynamically generate real Ethereal credentials so SMTP auth doesn't fail
