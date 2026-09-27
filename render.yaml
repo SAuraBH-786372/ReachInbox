@@ -1,0 +1,90 @@
+# render.yaml — Render Infrastructure-as-Code Blueprint
+# Deploy the entire ReachInbox stack with one click on Render.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # ─── Backend (Express + BullMQ + Prisma) ───────────────────────────────────
+  - type: web
+    name: reachinbox-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: starter            # upgrade to 'standard' for production workloads
+    region: oregon           # us-west-2
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      # PostgreSQL — auto-filled from the database below
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reachinbox-postgres
+          property: connectionString
+      # Redis — auto-filled from the Redis instance below
+      - key: REDIS_URL
+        fromService:
+          name: reachinbox-redis
+          type: redis
+          property: connectionString
+      - key: REDIS_TLS
+        value: "true"
+      # --- FILL THESE IN ON THE RENDER DASHBOARD ---
+      - key: CORS_ORIGIN
+        sync: false          # set manually: your frontend URL e.g. https://reachinbox-frontend.onrender.com
+      - key: FRONTEND_URL
+        sync: false          # same as CORS_ORIGIN
+      - key: SESSION_SECRET
+        generateValue: true  # Render auto-generates a secure random value
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false          # e.g. https://reachinbox-backend.onrender.com/api/auth/google/callback
+      - key: ELASTICSEARCH_NODE
+        sync: false          # e.g. https://user:pass@your-cluster.bonsai.io
+      - key: ELASTICSEARCH_INDEX
+        value: reachinbox_email_jobs
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WORKER_CONCURRENCY
+        value: "3"
+      - key: MIN_DELAY_SECONDS
+        value: "2"
+      # Optional — Slack
+      - key: SLACK_CLIENT_ID
+        sync: false
+      - key: SLACK_CLIENT_SECRET
+        sync: false
+      - key: SLACK_REDIRECT_URI
+        sync: false          # e.g. https://reachinbox-backend.onrender.com/api/slack/oauth/callback
+
+  # ─── Frontend (Next.js) ────────────────────────────────────────────────────
+  - type: web
+    name: reachinbox-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false          # set to your backend URL: https://reachinbox-backend.onrender.com
+
+  # ─── Redis (Managed) ───────────────────────────────────────────────────────
+  - type: redis
+    name: reachinbox-redis
+    plan: free               # upgrade to 'starter' for persistence
+    region: oregon
+    maxmemoryPolicy: noeviction  # BullMQ requires noeviction
+
+# ─── PostgreSQL (Managed) ────────────────────────────────────────────────────
+databases:
+  - name: reachinbox-postgres
+    plan: free               # upgrade to 'starter' for production
+    region: oregon
+    databaseName: reachinbox_db
+    user: reachinbox

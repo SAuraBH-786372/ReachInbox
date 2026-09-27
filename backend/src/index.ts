@@ -20,6 +20,9 @@ import './config/passport';
 
 const app = express();
 
+// Trust Render's TLS-terminating reverse proxy so secure cookies work
+app.set('trust proxy', 1);
+
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json());
 

@@ -1,11 +1,21 @@
 import { Client } from '@elastic/elasticsearch';
 import { config } from '../config';
 
-export const esClient = new Client({
+const esClientConfig: ConstructorParameters<typeof Client>[0] = {
   node: config.elasticsearch.node,
   maxRetries: 3,
   requestTimeout: 10000,
-});
+};
+
+// Support HTTP basic auth for hosted Elasticsearch (Bonsai, Elastic Cloud)
+if (config.elasticsearch.username && config.elasticsearch.password) {
+  esClientConfig.auth = {
+    username: config.elasticsearch.username,
+    password: config.elasticsearch.password,
+  };
+}
+
+export const esClient = new Client(esClientConfig);
 
 export const EMAILS_INDEX = config.elasticsearch.index; // "emails"
 

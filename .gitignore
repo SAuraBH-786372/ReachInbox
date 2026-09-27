@@ -2,8 +2,11 @@
 .env
 .env.local
 .env.production
+.env.production.local
 backend/.env
+backend/.env.production
 frontend/.env.local
+frontend/.env.production.local
 
 # Dependencies
 node_modules/

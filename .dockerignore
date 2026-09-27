@@ -1,0 +1,47 @@
+# ─── Docker Ignore ─────────────────────────────────────────────────────────────
+# Keep Docker build context small and secure
+
+# Git
+.git
+.gitignore
+
+# Node modules (will be reinstalled in container)
+node_modules
+*/node_modules
+**/node_modules
+
+# Build outputs (will be rebuilt in container)
+dist
+.next
+build
+
+# Environment secrets — NEVER include in Docker image
+.env
+.env.local
+.env.production
+backend/.env
+backend/.env.production
+frontend/.env.local
+frontend/.env.production.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker volumes
+postgres-data/
+redis-data/
+elasticsearch-data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Prisma generated (will regenerate in container)
+backend/node_modules/.prisma
