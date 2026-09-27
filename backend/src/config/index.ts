@@ -35,4 +35,9 @@ export const config = {
     pass: process.env.ETHEREAL_PASS || '',
   },
   jwtSecret: process.env.JWT_SECRET || 'reachinbox_dev_jwt_secret',
+  sendgrid: {
+    apiKey: process.env.SENDGRID_API_KEY || '',
+    fromEmail: process.env.SENDGRID_FROM_EMAIL || '',
+    fromName: process.env.SENDGRID_FROM_NAME || 'ReachInbox',
+  },
 };

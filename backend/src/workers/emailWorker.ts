@@ -73,7 +73,7 @@ export function createEmailWorker(): Worker<EmailJobData> {
         return;
       }
 
-      // ── Step 3: Send via Ethereal SMTP ─────────────────────────────────
+      // ── Step 3: Send Email ─────────────────────────────────────────────
       const sender = await prisma.sender.findUnique({
         where: { id: senderId },
       });
@@ -90,18 +90,35 @@ export function createEmailWorker(): Worker<EmailJobData> {
       const smtpConfig = sender.smtpConfigJson as any;
 
       try {
-        let info: any;
-        let isMocked = false;
-        // On Render free tier, standard SMTP ports (25, 465, 587) are blocked.
-        // If the user is using the demo Ethereal account, we must mock the SMTP connection 
-        // to prevent a 2-minute ETIMEDOUT hang, while still proving the BullMQ pipeline works.
-        if (smtpConfig.host === 'smtp.ethereal.email') {
-           // Simulate network delay
-           await new Promise(r => setTimeout(r, 1000));
-           info = { messageId: `<mock-${Date.now()}@ethereal.email>` };
-           isMocked = true;
-           console.log(`[EmailWorker] (Mocked for Render) Email sent to ${recipientEmail}`);
+        let messageId: string;
+
+        if (config.sendgrid.apiKey) {
+          // ── Strategy A: SendGrid HTTP API (works on Render, sends REAL emails) ──
+          const sgMail = require('@sendgrid/mail');
+          sgMail.setApiKey(config.sendgrid.apiKey);
+
+          const fromEmail = config.sendgrid.fromEmail || sender.email;
+          const fromName = config.sendgrid.fromName || smtpConfig.fromName || 'ReachInbox';
+
+          const msg = {
+            to: recipientEmail,
+            from: { email: fromEmail, name: fromName },
+            subject,
+            html: body,
+          };
+
+          const [response] = await sgMail.send(msg);
+          messageId = response.headers['x-message-id'] || `sg-${Date.now()}`;
+          console.log(`[EmailWorker] ✅ REAL email sent via SendGrid to ${recipientEmail}. MessageId: ${messageId}`);
+
+        } else if (smtpConfig.host === 'smtp.ethereal.email') {
+          // ── Strategy B: Mock Ethereal (Render blocks SMTP ports) ──
+          await new Promise(r => setTimeout(r, 1000));
+          messageId = `<mock-${Date.now()}@ethereal.email>`;
+          console.log(`[EmailWorker] (Mocked for Render) Email sent to ${recipientEmail}`);
+
         } else {
+          // ── Strategy C: Real SMTP (for non-Ethereal providers) ──
           const transporter = nodemailer.createTransport({
             host: smtpConfig.host,
             port: smtpConfig.port,
@@ -112,12 +129,18 @@ export function createEmailWorker(): Worker<EmailJobData> {
             },
           });
 
-          info = await transporter.sendMail({
+          const info = await transporter.sendMail({
             from: `"${smtpConfig.fromName || 'ReachInbox Sender'}" <${sender.email}>`,
             to: recipientEmail,
             subject,
             html: body,
           });
+
+          messageId = info.messageId;
+          const previewUrl = nodemailer.getTestMessageUrl(info);
+          if (previewUrl) {
+            console.log(`[EmailWorker] Ethereal Preview URL: ${previewUrl}`);
+          }
         }
 
         const sentAt = new Date();
@@ -131,13 +154,7 @@ export function createEmailWorker(): Worker<EmailJobData> {
           },
         });
 
-        console.log(`[EmailWorker] Email sent successfully to ${recipientEmail}. MessageId: ${info.messageId}`);
-        if (!isMocked) {
-          const previewUrl = nodemailer.getTestMessageUrl(info);
-          if (previewUrl) {
-            console.log(`[EmailWorker] Ethereal Preview URL: ${previewUrl}`);
-          }
-        }
+        console.log(`[EmailWorker] Email sent successfully to ${recipientEmail}. MessageId: ${messageId}`);
 
         // ── Step 4: Index in Elasticsearch ───────────────────────────────
         await indexEmailJob({
