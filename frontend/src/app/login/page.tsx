@@ -27,8 +27,20 @@ export default function LoginPage() {
     addToast('Email login coming soon', 'info');
   };
 
-  const handleDemoLogin = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/dev-login`;
+  const handleDemoLogin = async () => {
+    try {
+      const res = await fetchApi('/api/auth/dev-login');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = '/dashboard';
+        }
+      } else {
+        addToast('Demo login failed. Please try again.', 'error');
+      }
+    } catch (err) {
+      addToast('Could not reach backend. Is the server running?', 'error');
+    }
   };
 
   return (

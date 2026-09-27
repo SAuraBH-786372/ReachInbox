@@ -10,12 +10,12 @@ export const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || config.sessionSecret || 'fallback-secret',
   resave: false,
   saveUninitialized: false,
-  proxy: isProduction, // trust Render's TLS-terminating reverse proxy
+  proxy: true, // always trust proxy (Render's reverse proxy)
   store: new MemStore({ checkPeriod: 86400000 }),
   cookie: {
     httpOnly: true,
     secure: isProduction,           // HTTPS-only in production
-    sameSite: isProduction ? 'none' : 'lax', // cross-origin in prod
+    sameSite: isProduction ? 'none' : 'lax', // cross-origin cookies require 'none' + secure
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   },
 });

@@ -41,7 +41,9 @@ router.get('/dev-login', async (req: Request, res: Response) => {
     req.login(user, (err) => {
       if (err) return res.status(500).json({ error: err.message });
       req.session.save(() => {
-        res.redirect(`${config.corsOrigin}/dashboard`);
+        // Return JSON so the frontend can redirect — a server-side redirect
+        // across domains loses the session cookie
+        res.json({ success: true, redirectTo: `${config.corsOrigin}/dashboard` });
       });
     });
   } catch (error: any) {
