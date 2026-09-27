@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Copy monorepo root manifests
 COPY package.json package-lock.json ./
 
@@ -28,6 +31,9 @@ RUN npm run build --workspace=backend
 FROM node:20-alpine AS runner
 
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
 
 # Install only production deps
 COPY package.json package-lock.json ./
