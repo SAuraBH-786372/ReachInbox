@@ -400,7 +400,7 @@ export async function searchEmails(req: Request, res: Response) {
 
     // Re-order by ES relevance
     const idOrderMap = new Map(ids.map((id, idx) => [id, idx]));
-    rows.sort((a, b) => (idOrderMap.get(a.id) ?? 0) - (idOrderMap.get(b.id) ?? 0));
+    rows.sort((a: (typeof rows)[0], b: (typeof rows)[0]) => (idOrderMap.get(a.id) ?? 0) - (idOrderMap.get(b.id) ?? 0));
 
     return res.json({ data: rows, total, page, limit });
   } catch (error: any) {
