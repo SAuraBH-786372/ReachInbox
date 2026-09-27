@@ -13,7 +13,7 @@ COPY packages/ ./packages/
 COPY backend/package.json ./backend/
 
 # Install all dependencies (including workspaces)
-RUN npm ci --workspace=packages/types --workspace=backend
+RUN npm ci --workspace=packages/types --workspace=backend --omit=optional
 
 # Copy backend source code and tsconfig
 COPY backend/ ./backend/
@@ -34,7 +34,7 @@ COPY package.json package-lock.json ./
 COPY packages/ ./packages/
 COPY backend/package.json ./backend/
 
-RUN npm ci --workspace=packages/types --workspace=backend --omit=dev
+RUN npm ci --workspace=packages/types --workspace=backend --omit=dev --omit=optional
 
 # Copy compiled output
 COPY --from=builder /app/backend/dist ./backend/dist

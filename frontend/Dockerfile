@@ -26,6 +26,8 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build --workspace=frontend
+# Ensure public dir exists (project may not have one — COPY will fail otherwise)
+RUN mkdir -p ./frontend/public
 
 # ─── Stage 2: Production ───────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
@@ -40,7 +42,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=builder /app/frontend/.next/standalone ./
 COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
 
-# Copy public assets if they exist
+# Copy public assets (directory guaranteed to exist from builder)
 COPY --from=builder /app/frontend/public ./frontend/public
 
 EXPOSE 3000
