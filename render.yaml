@@ -9,7 +9,7 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
-    plan: starter            # upgrade to 'standard' for production workloads
+    plan: free               # free tier: spins down after 15 min idle
     region: oregon           # us-west-2
     envVars:
       - key: NODE_ENV
@@ -66,7 +66,7 @@ services:
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: .
-    plan: starter
+    plan: free               # free tier: spins down after 15 min idle
     region: oregon
     envVars:
       - key: NODE_ENV
