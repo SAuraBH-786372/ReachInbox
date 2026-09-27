@@ -1,0 +1,43 @@
+# ─── Stage 1: Build ────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy monorepo root manifests
+COPY package.json package-lock.json ./
+
+# Copy workspace packages
+COPY packages/ ./packages/
+
+# Copy frontend source
+COPY frontend/package.json ./frontend/
+
+# Install dependencies
+RUN npm ci --workspace=packages/types --workspace=frontend
+
+# Copy all source files
+COPY frontend/ ./frontend/
+
+# Build Next.js app
+# NEXT_PUBLIC_API_URL must be set at build time
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+RUN npm run build --workspace=frontend
+
+# ─── Stage 2: Production ───────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Copy only what Next.js needs to run in standalone mode
+COPY --from=builder /app/frontend/.next/standalone ./
+COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
+COPY --from=builder /app/frontend/public ./frontend/public
+
+EXPOSE 3000
+
+CMD ["node", "frontend/server.js"]
